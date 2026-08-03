@@ -1,0 +1,4 @@
+interface:
+  display_name: "3P Review"
+  short_description: "Triangulated Claude and Antigravity review"
+  default_prompt: "Use $3p to implement this task with independent Claude and Antigravity review."
