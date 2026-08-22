@@ -56,7 +56,7 @@ Advanced users can change those mappings with `$3p --models set [--global] <clau
 Configuration resolves in four layers, each overriding the one before:
 
 1. Built-in `DEFAULTS`
-2. **Machine-wide config** — `~/.config/3p/config.json` (relocate with `$THREEP_USER_CONFIG`)
+2. **Machine-wide config** — `~/.config/codex-3p/config.json` (relocate with `$CODEX_3P_USER_CONFIG`)
 3. **Project config** — `<anchor>/.3p/config.json`, where the anchor is the git root, else the cwd
 4. CLI flags (`--config`, `--exclude`) at `init` time
 
@@ -64,7 +64,7 @@ The `models` block merges **per slot** (reviewer × power × reviewType), so a p
 
 Because the project layer is anchored to the git root, a setting written without `--global` applies **only** inside that repo. Reviewer models almost always belong in the machine-wide layer.
 
-The machine-wide file is **shared with the Claude Code edition** of this skill, which reviews with `codex` + `antigravity` rather than `claude` + `antigravity`. Reviewer keys are namespaced by reviewer name, so both editions coexist in one file: each ignores reviewer keys it does not know, preserves them when writing, and the two share a single `antigravity` setting — which is what you want, since both drive the same `agy` PAL roles.
+The machine-wide directory is named for this edition. The Claude Code edition of this skill keeps its own at `~/.config/claude-code-3p/config.json`: the two have different reviewer rosters, so a shared file would let a change to one silently alter the other. They do both write `agy` PAL roles, but runs resolve a model-specific role name, so the two editions' Antigravity models stay independent.
 
 ## Interactive model picker (`$3p models`)
 

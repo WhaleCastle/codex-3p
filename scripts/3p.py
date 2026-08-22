@@ -211,8 +211,8 @@ def _merge_models(dst: dict, src) -> None:
     to DEFAULTS, not to the layer below). Merging per
     reviewer/power/reviewType keeps each layer authoritative only for the slots
     it actually names. Shapes this does not understand are passed through
-    untouched so normalize_config stays the single validator -- that also lets
-    one shared config file carry reviewer keys this CLI does not know.
+    untouched so normalize_config stays the single validator, which also keeps
+    a config carrying unknown reviewer keys from crashing the load.
     """
     if not isinstance(src, dict):
         return
@@ -275,9 +275,7 @@ def load_config(anchor: Path, config_path=None, cli_excludes=None) -> dict:
     """Merge defaults <- machine config <- project config file <- CLI flags.
     - The machine-wide config (see user_config_path) applies in every repo, so
       reviewer models can be set once per machine instead of per anchor. It is
-      the same file the Claude Code edition of this skill uses; reviewer keys
-      are namespaced by reviewer name, so the two coexist and share the
-      antigravity settings.
+      this edition's own file; the Claude Code edition keeps a separate one.
     - `excludes` in a config file REPLACES defaults (user-overridable bloat list).
     - `extraExcludes` in a config file APPENDS to defaults.
     - CLI `--exclude` flags always APPEND on top.
@@ -292,7 +290,7 @@ def load_config(anchor: Path, config_path=None, cli_excludes=None) -> dict:
             key = file_path.resolve()
         except OSError:
             key = file_path
-        if key in seen:  # $THREEP_USER_CONFIG pointed at the project file
+        if key in seen:  # the env override pointed at the project file
             continue
         seen.add(key)
         _merge_config_file(cfg, file_path)
@@ -306,22 +304,26 @@ def load_config(anchor: Path, config_path=None, cli_excludes=None) -> dict:
     return normalize_config(cfg)
 
 
-USER_CONFIG_ENV = "THREEP_USER_CONFIG"
+USER_CONFIG_ENV = "CODEX_3P_USER_CONFIG"
+USER_CONFIG_DIR = "codex-3p"
 
 
 def user_config_path() -> Path:
     """Machine-wide config, applied under every project's .3p/config.json.
 
     Project config is anchored to the git root, so without this layer a setting
-    like the reviewer model map would have to be repeated in every repo. Shared
-    with the Claude Code edition of this skill on purpose: both drive the same
-    antigravity PAL roles, so one antigravity setting should serve both. Point
-    $THREEP_USER_CONFIG elsewhere to relocate it (tests rely on this).
+    like the reviewer model map would have to be repeated in every repo.
+
+    The directory is named for this edition, not plain "3p": the Claude Code
+    edition of this skill has a different reviewer roster and must not share a
+    model map with it. The env override is edition-specific for the same reason
+    — one shared variable would recouple the two. Point $CODEX_3P_USER_CONFIG
+    elsewhere to relocate it (tests rely on this).
     """
     override = os.environ.get(USER_CONFIG_ENV, "").strip()
     if override:
         return Path(override).expanduser()
-    return Path.home() / ".config" / "3p" / "config.json"
+    return Path.home() / ".config" / USER_CONFIG_DIR / "config.json"
 
 
 def read_user_config() -> dict:
